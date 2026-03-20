@@ -1,6 +1,6 @@
 # Manual Instrumentation
 
-This guide shows how to manually add tracing middleware to your LLM clients. For zero-code instrumentation, see [Automatic Instrumentation](../../README.md#automatic-instrumentation) in the main README.
+This guide shows how to manually add tracing middleware to your LLM clients and frameworks. For zero-code instrumentation, see [Automatic Instrumentation](../../README.md#automatic-instrumentation) in the main README.
 
 ## Prerequisites
 
@@ -108,6 +108,37 @@ func main() {
     )
 }
 ```
+
+## Genkit
+
+```go
+import (
+    "context"
+    "os"
+
+    tracegenkit "github.com/braintrustdata/braintrust-sdk-go/trace/contrib/genkit"
+    "github.com/firebase/genkit/go/ai"
+    "github.com/firebase/genkit/go/genkit"
+    "github.com/firebase/genkit/go/plugins/googlegenai"
+)
+
+func main() {
+    ctx := context.Background()
+    g := genkit.Init(ctx,
+        genkit.WithPlugins(&googlegenai.GoogleAI{
+            APIKey: os.Getenv("GOOGLE_API_KEY"),
+        }),
+        genkit.WithDefaultModel("googleai/gemini-2.5-flash"),
+    )
+
+    _, _ = genkit.Generate(ctx, g,
+        ai.WithPrompt("Hello!"),
+        ai.WithMiddleware(tracegenkit.NewMiddleware()),
+    )
+}
+```
+
+`trace/contrib/genkit` is intended to instrument Genkit model execution directly. Avoid combining it with lower-level provider integrations such as `trace/contrib/openai`, `trace/contrib/anthropic`, or `trace/contrib/genai` on the same request path, because that can produce duplicate LLM spans.
 
 ## sashabaranov/go-openai
 
